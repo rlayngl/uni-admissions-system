@@ -1,0 +1,121 @@
+### REST Client request collection for the LR-3 local stack.
+### Run from a REST Client extension or copy requests into a terminal.
+### Replace tokens/IDs with values returned by the previous response.
+
+@base = http://localhost:8080/api/v1
+@userToken = PASTE_STUDENT01_ACCESS_TOKEN
+@otherUserToken = PASTE_STUDENT02_ACCESS_TOKEN
+@adminToken = PASTE_STAFF01_ACCESS_TOKEN
+@techToken = PASTE_TECH01_ACCESS_TOKEN
+@applicationId = aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+@documentId = PASTE_ISSUED_DOCUMENT_UUID
+
+### OP-01 Login as USER (copy access_token into @userToken)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "university_id": "student01",
+  "password": "Student-Demo-2026!"
+}
+
+### Login as second USER (copy access_token into @otherUserToken)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "university_id": "student02",
+  "password": "Student-Demo-2026!"
+}
+
+### Login as ADMIN (copy access_token into @adminToken)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "university_id": "staff01",
+  "password": "Staff-Demo-2026!"
+}
+
+### Login as TECH (copy access_token into @techToken)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "university_id": "tech01",
+  "password": "Tech-Demo-2026!"
+}
+
+### OP-02 Read own application (USER)
+GET {{base}}/applications/{{applicationId}}
+Authorization: Bearer {{userToken}}
+
+### OP-03 Create application (optional Idempotency-Key)
+POST {{base}}/applications
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+Idempotency-Key: demo-user01-create-0001
+
+{
+  "document_type_code": "STUDY_CERT",
+  "comment": "Запрос справки с места учёбы"
+}
+
+### OP-04 Change status (ADMIN; replace applicationId with an owned unit's application)
+PATCH {{base}}/applications/{{applicationId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "in_review",
+  "reason": "Документы приняты в работу"
+}
+
+### OP-05 List with optional filters and pagination
+GET {{base}}/applications?status=submitted&document_type_code=STUDY_CERT&page=1&page_size=20
+Authorization: Bearer {{userToken}}
+
+### OP-06 Issue document (ADMIN; application must be approved)
+POST {{base}}/applications/{{applicationId}}/issue
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "document_title": "Справка с места учёбы"
+}
+
+### OP-07 Read document (copy returned document_id into @documentId)
+GET {{base}}/documents/{{documentId}}
+Authorization: Bearer {{userToken}}
+
+### OP-08 AI endpoint: must return 501 as allowed by LR-3
+POST {{base}}/applications/{{applicationId}}/ai/completeness-check
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{}
+
+### OP-09 Read business audit (ADMIN)
+GET {{base}}/audit/events
+Authorization: Bearer {{adminToken}}
+
+### Logout (invalidates the currently used token)
+POST {{base}}/auth/logout
+Authorization: Bearer {{userToken}}
+
+### Request recovery code; same generic response for present and absent IDs
+POST {{base}}/auth/recovery
+Content-Type: application/json
+
+{
+  "university_id": "student01"
+}
+
+### Confirm recovery; obtain code from local API log, then replace CODE_FROM_LOCAL_LOG
+POST {{base}}/auth/recovery/confirm
+Content-Type: application/json
+
+{
+  "code": "CODE_FROM_LOCAL_LOG",
+  "new_password": "New-Strong-Password-2026!"
+}

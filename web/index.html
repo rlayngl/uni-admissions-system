@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Заявки на справки и документы</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Система заявок на справки и документы</h1>
+    <p class="muted">Лабораторная работа № 3 · Go 1.25 · PostgreSQL · Redis · RabbitMQ</p>
+    <p class="warn">Интерфейс предназначен для локального учебного стенда. Проверки прав выполняет сервер, а не браузер.</p>
+  </header>
+  <div class="layout">
+    <section>
+      <h2>1. Вход в систему</h2>
+      <label class="field"><span>Логин университета</span><input id="uid" value="student01" autocomplete="username"></label>
+      <label class="field"><span>Пароль</span><input id="pwd" type="password" autocomplete="current-password"></label>
+      <div class="row"><button data-action="login">Войти</button><button class="secondary" data-action="logout">Выйти</button></div>
+      <p id="who" class="muted">Нет активной сессии в этом окне.</p>
+    </section>
+    <section>
+      <h2>2. Восстановление доступа</h2>
+      <label class="field"><span>Логин университета</span><input id="recoveryUid" value="student01"></label>
+      <button class="secondary" data-action="recoveryRequest">Запросить код</button>
+      <p class="muted">Для локального стенда код восстановления записывается в журнал API: <code>docker compose logs api</code>.</p>
+      <label class="field"><span>Одноразовый код</span><input id="recoveryCode" autocomplete="one-time-code"></label>
+      <label class="field"><span>Новый пароль (не менее 12 символов)</span><input id="newPassword" type="password" autocomplete="new-password"></label>
+      <button class="secondary" data-action="recoveryConfirm">Изменить пароль</button>
+    </section>
+    <section>
+      <h2>3. Создание заявки</h2>
+      <label class="field"><span>Тип документа</span><select id="type"><option value="STUDY_CERT">STUDY_CERT — справка с места учёбы</option><option value="GRADE_CERT">GRADE_CERT — справка об успеваемости</option><option value="ENROLLMENT_CERT">ENROLLMENT_CERT — справка о зачислении</option></select></label>
+      <label class="field"><span>Комментарий</span><textarea id="comment" maxlength="2000" placeholder="Пояснение (необязательно)"></textarea></label>
+      <button data-action="createApp">Создать заявку</button>
+    </section>
+    <section>
+      <h2>4. Просмотр и фильтрация заявок</h2>
+      <div class="row"><input id="appId" placeholder="UUID заявки"><button class="secondary" data-action="getApp">Открыть</button></div>
+      <div class="row"><select id="filterStatus"><option value="">Все статусы</option><option>submitted</option><option>in_review</option><option>approved</option><option>rejected</option><option>issued</option><option>cancelled</option></select><select id="filterType"><option value="">Все типы</option><option>STUDY_CERT</option><option>GRADE_CERT</option><option>ENROLLMENT_CERT</option></select></div>
+      <div class="row"><label class="field"><span>Создано после (RFC3339)</span><input id="createdFrom" placeholder="2026-01-01T00:00:00Z"></label><label class="field"><span>Создано до (RFC3339)</span><input id="createdTo" placeholder="2026-10-01T00:00:00Z"></label></div>
+      <div class="row"><label class="field"><span>Страница</span><input id="page" type="number" min="1" value="1"></label><label class="field"><span>Размер страницы</span><input id="pageSize" type="number" min="1" max="100" value="20"></label></div>
+      <button data-action="listApps">Обновить список</button>
+    </section>
+    <section>
+      <h2>5. Действия ответственного сотрудника</h2>
+      <label class="field"><span>Новый статус</span><select id="newStatus"><option>in_review</option><option>approved</option><option>rejected</option><option>cancelled</option><option>submitted</option></select></label>
+      <label class="field"><span>Причина изменения</span><input id="reason" placeholder="Обязательна для rejected/cancelled"></label>
+      <button data-action="changeStatus">Изменить статус</button>
+      <hr>
+      <label class="field"><span>Название выдаваемого документа</span><input id="documentTitle" value="Справка с места учёбы" maxlength="240"></label>
+      <button data-action="issue">Выдать документ</button>
+      <label class="field"><span>ID выданного документа</span><input id="docId" placeholder="UUID документа"></label>
+      <button class="secondary" data-action="getDocument">Прочитать документ</button>
+    </section>
+    <section>
+      <h2>6. Аудит действий</h2>
+      <p class="muted">Ответственный сотрудник получает бизнес-аудит; техническая роль — ограниченный набор технических событий.</p>
+      <button class="secondary" data-action="audit">Загрузить доступные события</button>
+    </section>
+  </div>
+  <section>
+    <h2>Ответ API</h2>
+    <pre id="out">Войдите тестовой учётной записью, чтобы начать работу.</pre>
+  </section>
+  <p class="footer">Документ в учебном стенде формируется как текстовый артефакт. SHA-256 фиксирует контрольную сумму содержимого, но сам по себе не является электронной подписью и не придаёт документу юридическую силу.</p>
+<script src="/app.js" defer></script>
+</body>
+</html>
