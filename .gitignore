@@ -1,0 +1,27 @@
+# Secrets and local environment
+.env
+.env.*.local
+!.env.example
+
+# Go build/test outputs
+**/bin/
+**/dist/
+*.test
+*.out
+coverage.out
+
+# Local runtime data and logs
+*.log
+*.pid
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.idea/
+.vscode/
+*.swp
+
+# Generated report renders and Python cache
+docs/report_render/
+__pycache__/
+*.pyc
