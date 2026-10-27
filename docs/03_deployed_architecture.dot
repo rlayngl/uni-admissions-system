@@ -1,0 +1,31 @@
+digraph deployed {
+  graph [rankdir=LR, bgcolor="white", pad="0.3", nodesep="0.55", ranksep="0.8", fontname="DejaVu Sans", labelloc="t", label="ЛР № 3 — фактически развёртываемые контейнеры и потоки", fontsize=20];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff", color="#334155", fontname="DejaVu Sans", fontsize=10, margin="0.14,0.10"];
+  edge [color="#475569", fontname="DejaVu Sans", fontsize=8, arrowsize=0.7];
+
+  USER [label="R-02 / R-03 / R-04\nПользователь / сотрудник / техспециалист", fillcolor="#f1f5f9"];
+  subgraph cluster_client { label="Клиентский контур"; color="#94a3b8"; style="rounded,dashed"; WEB [label="web\nNginx + HTML/CSS/JS", fillcolor="#e2e8f0"]; }
+  subgraph cluster_app { label="Серверный контур Docker Compose"; color="#475569"; style="rounded"; penwidth=1.5;
+    API [label="api\nGo 1.25 / REST\nAuth • RBAC • object auth\nWorkflow • audit • documents", fillcolor="#dbeafe", penwidth=1.5];
+    WORKER [label="worker\nGo 1.25\nOutbox publisher + consumer\nSMTP notification", fillcolor="#dcfce7"];
+    subgraph cluster_data { label="Data plane"; color="#94a3b8"; style="rounded,dashed";
+      DB [label="db / PostgreSQL\nBusiness source of truth\nDDL + constraints + triggers", fillcolor="#fef3c7"];
+      REDIS [label="redis\nOpaque sessions\nRate limits + type cache TTL 5m", fillcolor="#fce7f3"];
+      MQ [label="rabbitmq\nDurable queue\ndocument.notifications", fillcolor="#ede9fe"];
+    }
+    MAIL [label="mailpit\nLocal SMTP sink :1025\nWeb UI :8025", fillcolor="#e0f2fe"];
+  }
+  HOST [label="Хостовая ОС / Docker runtime", fillcolor="#f8fafc"];
+  LLM [label="LLM integration\nне развёртывается\n(исключение ЛР № 3)", style="rounded,dashed,filled", fillcolor="#f8fafc", color="#94a3b8"];
+
+  USER -> WEB [label="HTTP localhost:8081"];
+  WEB -> API [label="/api/v1 • JSON", dir=both];
+  API -> DB [label="SQL; tx + outbox"];
+  API -> REDIS [label="RESP; sessions / rate limit / cache", dir=both];
+  WORKER -> DB [label="SQL; read outbox / update state", dir=both];
+  WORKER -> MQ [label="AMQP publish + confirm; consume / ACK", dir=both];
+  WORKER -> MAIL [label="SMTP; local email delivery"];
+  HOST -> API [style=dotted, label="container runtime"];
+  HOST -> WORKER [style=dotted];
+  LLM -> API [style=dashed, arrowhead=none, label="not connected"];
+}

@@ -1,0 +1,57 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2", nodesep="0.42", ranksep="0.75", fontname="DejaVu Sans", labelloc="t", label="C4 — контейнерная архитектура (уровень 2) и границы доверия", fontsize=20];
+  node [shape=box, style="rounded,filled", fillcolor="white", color="#333333", fontname="DejaVu Sans", fontsize=9, margin="0.12,0.08"];
+  edge [color="#444444", fontname="DejaVu Sans", fontsize=7.6, arrowsize=0.65];
+
+  subgraph cluster_users {
+    label="ATB-01 — внешние субъекты"; color="#777777"; style="dashed"; penwidth=1.2; fontname="DejaVu Sans";
+    USERS [label="R-01 / R-02 / R-03 / R-07\nпользователи и нарушитель", fillcolor="#F7F7F7"];
+  }
+
+  subgraph cluster_client {
+    label="Клиентская часть"; color="#777777"; style="dashed"; penwidth=1.2; fontname="DejaVu Sans";
+    WEB [label="C-01\nВеб-клиент\nHTML/CSS/JS", fillcolor="#F2F2F2"];
+  }
+
+  subgraph cluster_server {
+    label="Система — серверный контур"; color="#444444"; style="solid"; penwidth=1.6; fontname="DejaVu Sans";
+
+    API [label="C-02\nBackend API\nFastAPI / модульный монолит\nAuth/RBAC • object auth\nWorkflow • Audit • Documents", fillcolor="#E7E7E7", penwidth=1.8];
+    AI [label="C-03\nLLM Gateway\nминимизация + schema validation", fillcolor="#F7F7F7"];
+    W [label="C-04\nBackground Worker\noutbox → notifications", fillcolor="#F7F7F7"];
+
+    subgraph cluster_data {
+      label="ATB-03 — data plane"; color="#888888"; style="dashed"; penwidth=1.1; fontname="DejaVu Sans";
+      DB [label="C-05\nPostgreSQL\nSOURCE OF TRUTH", fillcolor="#DEDEDE", penwidth=1.7];
+      REDIS [label="C-06\nRedis\nsession / rate-limit / cache", fillcolor="#F7F7F7"];
+      MQ [label="C-07\nRabbitMQ\ndurable queue", fillcolor="#F7F7F7"];
+    }
+  }
+
+  subgraph cluster_ai_ext {
+    label="ATB-04 — внешний AI-провайдер"; color="#777777"; style="dashed"; penwidth=1.2; fontname="DejaVu Sans";
+    LLM [label="R-08\nВнешний LLM provider", fillcolor="#F7F7F7"];
+  }
+  subgraph cluster_mail_ext {
+    label="ATB-05 — внешний mail-провайдер"; color="#777777"; style="dashed"; penwidth=1.2; fontname="DejaVu Sans";
+    MAIL [label="R-05\nПочтовый сервис", fillcolor="#F7F7F7"];
+  }
+
+  HOST [label="R-06\nХост / ОС / container runtime", fillcolor="#F7F7F7"];
+  TECH [label="R-04\nТехнический специалист", fillcolor="#F7F7F7"];
+
+  USERS -> WEB [label="HTTPS; UI/запросы\nATB-01"];
+  WEB -> API [label="HTTPS/JSON; API requests\nATB-02 (internal)"];
+  API -> DB [label="SQL/TLS; business data"];
+  API -> REDIS [label="RESP/TLS; session + rate limit"];
+  API -> MQ [label="AMQP/TLS; notification event"];
+  API -> AI [label="HTTPS/JSON; normalized AI request"];
+  AI -> LLM [label="HTTPS/JSON; minimal fields\nATB-04"];
+  AI -> API [label="HTTPS/JSON; validated result"];
+  W -> MQ [dir=both, label="AMQP/TLS; consume/ack"];
+  W -> DB [label="SQL/TLS; outbox + notification state"];
+  W -> MAIL [label="HTTPS/JSON; notification\nATB-05"];
+  TECH -> DB [label="PostgreSQL/TLS; service access"];
+  TECH -> API [label="HTTPS; health/metrics"];
+  HOST -> API [dir=both, label="ATB-06; runtime for application containers"];
+}
