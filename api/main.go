@@ -409,8 +409,8 @@ func (a *App) createApplication(w http.ResponseWriter, r *http.Request, p *Princ
 	defer tx.Rollback(r.Context())
 	var created time.Time
 	err = tx.QueryRow(r.Context(), `INSERT INTO applications(application_id,owner_user_id,service_unit_code,document_type_id,comment,idempotency_key,idempotency_payload_hash)
-		VALUES($1::uuid,$2::uuid,$3,$4,NULLIF($5,''),NULLIF($6,''),NULLIF($7,''))
-		ON CONFLICT (owner_user_id,idempotency_key) DO NOTHING RETURNING created_at`, id, p.ID, defaultUnit(p.Unit), typ.ID, in.Comment, idempotencyKey, idempotencyPayloadHash).Scan(&created)
+    	VALUES($1::uuid,$2::uuid,$3,$4,NULLIF($5::text,''),NULLIF($6::text,''),NULLIF($7::text,''))
+    	ON CONFLICT (owner_user_id,idempotency_key) DO NOTHING RETURNING created_at`, id, p.ID, defaultUnit(p.Unit), typ.ID, in.Comment, idempotencyKey, idempotencyPayloadHash).Scan(&created)
 	if errors.Is(err, pgx.ErrNoRows) && idempotencyKey != "" {
 		var existingID, existingStatus, existingTypeCode, existingHash string
 		var existingCreated time.Time
@@ -438,7 +438,7 @@ func (a *App) createApplication(w http.ResponseWriter, r *http.Request, p *Princ
 	}
 	if err == nil {
 		_, err = tx.Exec(r.Context(), `INSERT INTO audit_events(actor_user_id,event_type,entity_type,entity_ref,outcome,request_id,source_ip,details)
-			VALUES($1::uuid,'application_created','application',$2,'success',$3::uuid,$4::inet,jsonb_build_object('document_type_code',$5,'idempotency_key',$6))`, p.ID, id, r.Header.Get("X-Request-ID"), clientIP(r), typ.Code, idempotencyKey)
+			VALUES($1::uuid,'application_created','application',$2,'success',$3::uuid,$4::inet,jsonb_build_object('document_type_code',$5::text,'idempotency_key',$6::text))`, p.ID, id, r.Header.Get("X-Request-ID"), clientIP(r), typ.Code, idempotencyKey)
 	}
 	if err != nil {
 		log.Printf("create application transaction failed request_id=%s: %v", r.Header.Get("X-Request-ID"), err)
